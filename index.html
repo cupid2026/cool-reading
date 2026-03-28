@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🌈 快乐阅读 · 智能错题强化系统 🌈</title>
+    <title>🌈 快乐阅读 🌈</title>
     <style>
         * {
             margin: 0;
@@ -456,10 +456,10 @@
 
 <div class="dashboard">
     <div class="story-toc">
-        <div class="toc-header"><span>📚</span> 智能练习系统 <span>🧠</span></div>
+        <div class="toc-header"><span>📚</span> 快乐阅读 <span>🧠</span></div>
         <div class="mode-switch">
             <button id="modeNormalBtn" class="mode-btn active">📖 故事模式</button>
-            <button id="modeRandomBtn" class="mode-btn">🎲 智能随机(30题)</button>
+            <button id="modeRandomBtn" class="mode-btn">🎲 随机(30题)</button>
         </div>
         <div class="toc-list" id="tocListContainer"></div>
         <div style="margin-top: 16px; text-align: center; font-size: 0.7rem; color:#d9a066;">✨ 共20个故事，210道题目 ✨</div>
@@ -470,7 +470,7 @@
     <div class="content-main">
         <div class="hero">
             <div class="title-box">
-                <h1>⭐ 智能错题强化系统 ⭐</h1>
+                <h1>⭐ 快乐阅读·练习 ⭐</h1>
                 <p>🐣 做错→立即强化 | 做对5次→自动隐藏 | 错≥3次→必出现 🐣</p>
             </div>
             <div class="tips"><span>💡</span> 数据自动保存，智能练习更高效</div>
@@ -482,7 +482,7 @@
 
         <div class="action-bar">
             <button class="reset-btn" id="resetCurrentBtn">⭐ 重置当前答题 ⭐</button>
-            <button class="random-session-btn" id="newRandomBtn">🎯 智能随机30题(错题强化)</button>
+            <button class="random-session-btn" id="newRandomBtn">🎯 随机30题(错题强化)</button>
             <button class="unhide-btn" id="unhideAllBtn">🔓 显示所有隐藏题目</button>
             <button class="clear-record-btn" id="clearRecordBtn">🗑️ 清空所有记录</button>
         </div>
@@ -729,7 +729,7 @@ function updateSummary() {
     }
     const panel = document.getElementById('wrongSummaryPanel');
     if(panel) {
-        panel.innerHTML = `📊 累计错题: ${totalWrong}次 | 已掌握(隐藏): ${hiddenCount}题<br>⚠️ 高频错题(≥3次): ${forceCount}题 | 做对5次自动隐藏`;
+        panel.innerHTML = ` 累计错题: ${totalWrong}次 | 已掌握(隐藏): ${hiddenCount}题<br>⚠️ 高频错题(≥3次): ${forceCount}题 | 做对5次自动隐藏`;
     }
 }
 
