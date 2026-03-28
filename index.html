@@ -1008,7 +1008,8 @@ function buildToc() {
         const div = document.createElement('div');
         div.className = 'toc-item';
         if(currentMode==='normal' && idx===currentStoryIdx) div.classList.add('active');
-        div.innerHTML = `<div class="toc-icon">${story.name.charAt(0)}</div><div>${story.name}</div><span class="story-count-badge">${story.items.length}</span>`;
+       const storyIcon = Array.from(story.name)[0] || '📚';
+div.innerHTML = `<div class="toc-icon">${storyIcon}</div><div>${story.name}</div><span class="story-count-badge">${story.items.length}</span>`;
         div.addEventListener('click', () => {
             if(currentMode === 'normal') { currentStoryIdx = idx; renderCurrent(); }
             else { currentMode = 'normal'; currentStoryIdx = idx; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); renderCurrent(); }
