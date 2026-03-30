@@ -263,6 +263,15 @@
             color: white;
             font-size: 0.8rem;
         }
+        .story-tag {
+            background: #ffe0a3;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #a35213;
+            margin-left: 8px;
+        }
         .stats-area {
             display: flex;
             gap: 12px;
@@ -451,7 +460,7 @@
         <div class="toc-header"><span>📚</span> 快乐阅读 <span>🧠</span></div>
         <div class="mode-switch">
             <button id="modeNormalBtn" class="mode-btn active">📖 故事模式</button>
-            <button id="modeRandomBtn" class="mode-btn">🎲 随机(30题)</button>
+            <button id="modeRandomBtn" class="mode-btn">🎲 随机练习</button>
         </div>
         <div class="toc-list" id="tocListContainer"></div>
         <div style="margin-top: 16px; text-align: center; font-size: 0.7rem; color:#d9a066;">✨ 共20个故事，210道题目 ✨</div>
@@ -463,9 +472,9 @@
         <div class="hero">
             <div class="title-box">
                 <h1>⭐ 快乐阅读·练习 ⭐</h1>
-                <p>🐣 做错→立即强化 | 做对3次→自动隐藏 | 错≥3次→必出现 🐣</p>
+                <p>🐣 做错→立即强化 | 做对3次→自动隐藏并移除 | 错≥3次→必出现 🐣</p>
             </div>
-            <div class="tips"><span>💡</span> 数据自动保存，智能练习更高效</div>
+            <div class="tips"><span>💡</span> 切换故事模式·随机练习模式</div>
         </div>
 
         <div id="dynamic-story-area">
@@ -474,92 +483,76 @@
 
         <div class="action-bar">
             <button class="reset-btn" id="resetCurrentBtn">⭐ 重置当前答题 ⭐</button>
-            <button class="random-session-btn" id="newRandomBtn">🎯 随机30题(错题强化)</button>
-            <button class="unhide-btn" id="unhideAllBtn">🔓 显示所有隐藏题目</button>
-            <button class="clear-record-btn" id="clearRecordBtn">🗑️ 清空所有记录</button>
+            <button class="random-session-btn" id="newRandomBtn">🎯 随机30题(错题优先)</button>
+            <button class="unhide-btn" id="unhideAllBtn">🔓 显示隐藏题目</button>
+            <button class="clear-record-btn" id="clearRecordBtn">🗑️ 清空记录</button>
         </div>
         <div style="text-align:center; margin-top:12px;"><span class="story-progress" id="storyProgress"></span></div>
     </div>
 </div>
 
 <script>
-// ======================= 童音音效: “闪闪你真棒” ========================
+// ======================= 童音音效 ========================
 function playCheerVoice() {
-    // 使用 Web Speech API 合成可爱童音 (兼容所有现代浏览器)
     if (window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance("闪闪你真棒！");
         utterance.lang = "zh-CN";
-        utterance.rate = 0.9;      // 稍慢，童趣
-        utterance.pitch = 1.5;     // 高音调，像小朋友
+        utterance.rate = 0.9;
+        utterance.pitch = 1.5;
         utterance.volume = 0.8;
-        // 挑选一个女声或童声 (优先)
-        const voices = window.speechSynthesis.getVoices();
-        const childVoice = voices.find(voice => voice.lang === 'zh-CN' && (voice.name.includes('Tingting') || voice.name.includes('Yaoyao') || voice.name.includes('Xiaoxiao') || voice.name.includes('Junior')));
-        if (childVoice) utterance.voice = childVoice;
-        window.speechSynthesis.cancel(); // 避免重叠
+        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
-    } else {
-        // 降级方案：播放简单提示音 (不影响体验)
-        console.log("浏览器不支持语音，跳过音效");
     }
 }
 
-// ======================= 完整题库 (严格按照文档逐字整理，答案匹配) =======================
-
-// 故事1: 神笔马良 (20题)
-const story1Items = [
-    { text: "马良是个怎样的孩子？", options: ["A. 懒惰贪玩", "B. 勤劳善良", "C. 自私自利"], answer: "B" },
-    { text: "马良小时候最大的愿望是什么？", options: ["A. 吃好吃的", "B. 有一支笔学画画", "C. 去远方"], answer: "B" },
-    { text: "马良没有笔时，用什么在地上画画？", options: ["A. 手指、木炭、草根", "B. 石头、沙子", "C. 树枝、树叶"], answer: "A" },
-    { text: "送马良神笔的是谁？", options: ["A. 皇帝", "B. 白胡须老人", "C. 财主"], answer: "B" },
-    { text: "神笔有什么神奇之处？", options: ["A. 画什么都能变成真的", "B. 能发光", "C. 能写字"], answer: "A" },
-    { text: "马良用神笔先画了什么帮助穷人？", options: ["A. 金银珠宝", "B. 耕牛、水车、犁", "C. 房子"], answer: "B" },
-    { text: "贪心的财主想抢神笔，让马良画什么？", options: ["A. 粮食", "B. 金山", "C. 衣服"], answer: "B" },
-    { text: "财主把马良关起来，马良画什么逃了出去？", options: ["A. 大门", "B. 梯子", "C. 小鸟"], answer: "B" },
-    { text: "皇帝听说神笔后，把马良抓去让他画什么？", options: ["A. 摇钱树", "B. 宫殿", "C. 士兵"], answer: "A" },
-    { text: "马良被皇帝逼迫时，表现得很？", options: ["A. 害怕", "B. 勇敢", "C. 顺从"], answer: "B" },
-    { text: "马良用神笔没画过的是？", options: ["A. 汽车", "B. 耕牛", "C. 水车"], answer: "A" },
-    { text: "马良一开始学画画的地方是？", options: ["A. 学堂", "B. 家里", "C. 野外"], answer: "C" },
-    { text: "财主和皇帝的共同点是？", options: ["A. 贪心", "B. 善良", "C. 勇敢"], answer: "A" },
-    { text: "马良对待神笔的态度是？", options: ["A. 好好使用帮助他人", "B. 随意使用", "C. 藏起来不用"], answer: "A" },
-    { text: "马良画金山时，把金山画在了？", options: ["A. 海里", "B. 山上", "C. 平原"], answer: "A" },
-    { text: "皇帝去取金山时，马良画了什么？", options: ["A. 大风大浪", "B. 小船", "C. 桥梁"], answer: "A" },
-    { text: "故事的结局，马良？", options: ["A. 继续为穷人画画", "B. 被皇帝抓住", "C. 放弃神笔"], answer: "A" },
-    { text: "这个故事告诉我们要？", options: ["A. 善良勇敢、不贪财", "B. 贪婪自私", "C. 胆小怕事"], answer: "A" },
-    { text: "马良画画的本领是？", options: ["A. 天生就会", "B. 刻苦练习得来", "C. 神笔赋予"], answer: "B" },
-    { text: "文中没有出现的人物是？", options: ["A. 老师", "B. 财主", "C. 皇帝"], answer: "A" }
-];
-
-// 故事2: 雪天 (10题)
-const story2Items = [
-    { text: "《雪天》故事发生在什么季节？", options: ["A. 春天", "B. 夏天", "C. 冬天"], answer: "C" },
-    { text: "坊村的雪覆盖了哪些地方？", options: ["A. 屋顶、地面", "B. 只有树上", "C. 只有河边"], answer: "A" },
-    { text: "坊村下雪后，小动物们会？", options: ["A. 躲在家里", "B. 出门玩耍", "C. 迁徙南方"], answer: "B" },
-    { text: "《雪天》里\"我\"记得雪天的什么？", options: ["A. 美食", "B. 趣事", "C. 风景"], answer: "B" },
-    { text: "文中\"坊村\"的\"坊\"读音是？", options: ["A.fāng", "B.fáng", "C.fǎng"], answer: "A" },
-    { text: "雪下得大时，天地间是什么样子？", options: ["A. 灰蒙蒙", "B. 白茫茫", "C. 金灿灿"], answer: "B" },
-    { text: "雪天里，人们出门会？", options: ["A. 穿单薄衣服", "B. 穿厚棉袄", "C. 打遮阳伞"], answer: "B" },
-    { text: "文中描写雪的句子没有提到？", options: ["A. 雪的颜色", "B. 雪的厚度", "C. 雪的味道"], answer: "C" },
-    { text: "\"我\"对雪天的感受是？", options: ["A. 讨厌", "B. 喜欢", "C. 无所谓"], answer: "B" },
-    { text: "坊村的雪是？", options: ["A. 薄薄一层", "B. 厚厚一片", "C. 只有山顶有"], answer: "B" }
-];
-
-// 故事3: 小猴的新房子 (10题)
-const story3Items = [
-    { text: "小猴盖新房子是为了？", options: ["A. 自己住", "B. 招待朋友", "C. 存放食物"], answer: "A" },
-    { text: "小猴盖房主要用什么材料？", options: ["A. 石头", "B. 树枝", "C. 泥土"], answer: "B" },
-    { text: "小猴盖房遇到的困难是？", options: ["A. 没有工具", "B. 材料不够", "C. 天气太热"], answer: "B" },
-    { text: "小猴的新房子最后怎么样？", options: ["A. 塌了", "B. 很坚固", "C. 被风吹走"], answer: "B" },
-    { text: "小猴盖房得到谁的帮助？", options: ["A. 小鸟", "B. 小熊", "C. 没有帮助"], answer: "C" },
-    { text: "小猴一开始盖的房子？", options: ["A. 很完美", "B. 有漏洞", "C. 很大"], answer: "B" },
-    { text: "小猴是一只怎样的猴子？", options: ["A. 勤劳能干", "B. 懒惰笨拙", "C. 自私自利"], answer: "A" },
-    { text: "新房子建好后，小猴的心情？", options: ["A. 难过", "B. 开心", "C. 平静"], answer: "B" },
-    { text: "小猴的新房子适合什么季节住？", options: ["A. 春天", "B. 夏天", "C. 冬天"], answer: "C" },
-    { text: "文中没有提到小猴盖房时的？", options: ["A. 动作", "B. 心情", "C. 外貌"], answer: "C" }
-];
-
-// 动态生成剩余17个故事 (严格按照文档内容，选项和答案准确)
-const remainingStories = [
+// ======================= 完整210题题库（根据文档逐题录入）=======================
+const STORIES = [
+    { name: "🎨 神笔马良", items: [
+        { text: "马良是个怎样的孩子？", options: ["A. 懒惰贪玩", "B. 勤劳善良", "C. 自私自利"], answer: "B" },
+        { text: "马良小时候最大的愿望是什么？", options: ["A. 吃好吃的", "B. 有一支笔学画画", "C. 去远方"], answer: "B" },
+        { text: "马良没有笔时，用什么在地上画画？", options: ["A. 手指、木炭、草根", "B. 石头、沙子", "C. 树枝、树叶"], answer: "A" },
+        { text: "送马良神笔的是谁？", options: ["A. 皇帝", "B. 白胡须老人", "C. 财主"], answer: "B" },
+        { text: "神笔有什么神奇之处？", options: ["A. 画什么都能变成真的", "B. 能发光", "C. 能写字"], answer: "A" },
+        { text: "马良用神笔先画了什么帮助穷人？", options: ["A. 金银珠宝", "B. 耕牛、水车、犁", "C. 房子"], answer: "B" },
+        { text: "贪心的财主想抢神笔，让马良画什么？", options: ["A. 粮食", "B. 金山", "C. 衣服"], answer: "B" },
+        { text: "财主把马良关起来，马良画什么逃了出去？", options: ["A. 大门", "B. 梯子", "C. 小鸟"], answer: "B" },
+        { text: "皇帝听说神笔后，把马良抓去让他画什么？", options: ["A. 摇钱树", "B. 宫殿", "C. 士兵"], answer: "A" },
+        { text: "马良被皇帝逼迫时，表现得很？", options: ["A. 害怕", "B. 勇敢", "C. 顺从"], answer: "B" },
+        { text: "马良用神笔没画过的是？", options: ["A. 汽车", "B. 耕牛", "C. 水车"], answer: "A" },
+        { text: "马良一开始学画画的地方是？", options: ["A. 学堂", "B. 家里", "C. 野外"], answer: "C" },
+        { text: "财主和皇帝的共同点是？", options: ["A. 贪心", "B. 善良", "C. 勇敢"], answer: "A" },
+        { text: "马良对待神笔的态度是？", options: ["A. 好好使用帮助他人", "B. 随意使用", "C. 藏起来不用"], answer: "A" },
+        { text: "马良画金山时，把金山画在了？", options: ["A. 海里", "B. 山上", "C. 平原"], answer: "A" },
+        { text: "皇帝去取金山时，马良画了什么？", options: ["A. 大风大浪", "B. 小船", "C. 桥梁"], answer: "A" },
+        { text: "故事的结局，马良？", options: ["A. 继续为穷人画画", "B. 被皇帝抓住", "C. 放弃神笔"], answer: "A" },
+        { text: "这个故事告诉我们要？", options: ["A. 善良勇敢、不贪财", "B. 贪婪自私", "C. 胆小怕事"], answer: "A" },
+        { text: "马良画画的本领是？", options: ["A. 天生就会", "B. 刻苦练习得来", "C. 神笔赋予"], answer: "B" },
+        { text: "文中没有出现的人物是？", options: ["A. 老师", "B. 财主", "C. 皇帝"], answer: "A" }
+    ] },
+    { name: "❄️ 雪天", items: [
+        { text: "《雪天》故事发生在什么季节？", options: ["A. 春天", "B. 夏天", "C. 冬天"], answer: "C" },
+        { text: "坊村的雪覆盖了哪些地方？", options: ["A. 屋顶、地面", "B. 只有树上", "C. 只有河边"], answer: "A" },
+        { text: "坊村下雪后，小动物们会？", options: ["A. 躲在家里", "B. 出门玩耍", "C. 迁徙南方"], answer: "B" },
+        { text: "《雪天》里\"我\"记得雪天的什么？", options: ["A. 美食", "B. 趣事", "C. 风景"], answer: "B" },
+        { text: "文中\"坊村\"的\"坊\"读音是？", options: ["A.fāng", "B.fáng", "C.fǎng"], answer: "A" },
+        { text: "雪下得大时，天地间是什么样子？", options: ["A. 灰蒙蒙", "B. 白茫茫", "C. 金灿灿"], answer: "B" },
+        { text: "雪天里，人们出门会？", options: ["A. 穿单薄衣服", "B. 穿厚棉袄", "C. 打遮阳伞"], answer: "B" },
+        { text: "文中描写雪的句子没有提到？", options: ["A. 雪的颜色", "B. 雪的厚度", "C. 雪的味道"], answer: "C" },
+        { text: "\"我\"对雪天的感受是？", options: ["A. 讨厌", "B. 喜欢", "C. 无所谓"], answer: "B" },
+        { text: "坊村的雪是？", options: ["A. 薄薄一层", "B. 厚厚一片", "C. 只有山顶有"], answer: "B" }
+    ] },
+    { name: "🐒 小猴的新房子", items: [
+        { text: "小猴盖新房子是为了？", options: ["A. 自己住", "B. 招待朋友", "C. 存放食物"], answer: "A" },
+        { text: "小猴盖房主要用什么材料？", options: ["A. 石头", "B. 树枝", "C. 泥土"], answer: "B" },
+        { text: "小猴盖房遇到的困难是？", options: ["A. 没有工具", "B. 材料不够", "C. 天气太热"], answer: "B" },
+        { text: "小猴的新房子最后怎么样？", options: ["A. 塌了", "B. 很坚固", "C. 被风吹走"], answer: "B" },
+        { text: "小猴盖房得到谁的帮助？", options: ["A. 小鸟", "B. 小熊", "C. 没有帮助"], answer: "C" },
+        { text: "小猴一开始盖的房子？", options: ["A. 很完美", "B. 有漏洞", "C. 很大"], answer: "B" },
+        { text: "小猴是一只怎样的猴子？", options: ["A. 勤劳能干", "B. 懒惰笨拙", "C. 自私自利"], answer: "A" },
+        { text: "新房子建好后，小猴的心情？", options: ["A. 难过", "B. 开心", "C. 平静"], answer: "B" },
+        { text: "小猴的新房子适合什么季节住？", options: ["A. 春天", "B. 夏天", "C. 冬天"], answer: "C" },
+        { text: "文中没有提到小猴盖房时的？", options: ["A. 动作", "B. 心情", "C. 外貌"], answer: "C" }
+    ] },
     { name: "🌳 大树爷爷和小鸟", items: [
         { text: "大树爷爷为小鸟提供？", options: ["A. 食物", "B. 家", "C. 玩具"], answer: "B" },
         { text: "小鸟遇到困难时大树爷爷会？", options: ["A. 不理睬", "B. 帮助它", "C. 赶走它"], answer: "B" },
@@ -596,25 +589,43 @@ const remainingStories = [
         { text: "老猎人打猎是为了？", options: ["A. 生存", "B. 娱乐", "C. 炫耀"], answer: "A" },
         { text: "文中动物的情感是？", options: ["A. 恐惧", "B. 愤怒", "C. 友好"], answer: "A" }
     ] },
-    { name: "🌺 英雄树唱歌", items: Array(10).fill().map((_,i)=> {
-        const qs = ["《英雄树唱歌》英雄树指的是？","英雄树生长在什么地方？","英雄树的花是什么颜色？","英雄树象征着？","故事中英雄树会？","人们为什么喜欢英雄树？","英雄树的树干？","《英雄树唱歌》传递的情感是？","英雄树适合生长的环境？","故事中英雄树代表？"];
-        const opts = [["A. 松树","B. 木棉树","C. 柳树"],["A. 北方","B. 南方","C. 西方"],["A. 白色","B. 黄色","C. 红色"],["A. 美丽","B. 勇敢","C. 柔软"],["A. 结果","B. 唱歌","C. 跳舞"],["A. 花好看","B. 象征精神","C. 能遮阴"],["A. 纤细","B. 粗壮","C. 弯曲"],["A. 悲伤","B. 敬佩","C. 平淡"],["A. 寒冷","B. 温暖","C. 干燥"],["A. 英雄人物","B. 普通植物","C. 神秘力量"]];
-        const ans = ["B","B","C","B","B","B","B","B","B","A"];
-        return { text: qs[i], options: opts[i], answer: ans[i] };
-    }) },
-    { name: "🧚 仙女的海滩", items: Array(10).fill().map((_,i)=> {
-        const qs = ["《仙女的海滩》海滩上有什么特别的东西？","仙女的海滩让\"我\"感觉？","在仙女的海滩可以？","《仙女的海滩》是一个什么故事？","仙女的海滩在？","海滩上的沙子是什么样子？","仙女的海滩周围有？","\"我\"在海滩上的心情？","文中没有描写海滩的？","这个故事体现了孩子的？"];
-        const opts = [["A. 贝壳","B. 仙女","C. 宝石"],["A. 害怕","B. 神奇","C. 无聊"],["A. 捡贝壳","B. 见仙女","C. 堆沙子"],["A. 真实","B. 童话","C. 历史"],["A. 梦里","B. 现实","C. 远方"],["A. 粗糙","B. 细腻","C. 坚硬"],["A. 海浪","B. 高山","C. 沙漠"],["A. 难过","B. 愉悦","C. 紧张"],["A. 颜色","B. 声音","C. 气味"],["A. 想象力","B. 记忆力","C. 观察力"]];
-        const ans = ["B","B","B","B","A","B","A","B","C","A"];
-        return { text: qs[i], options: opts[i], answer: ans[i] };
-    }) },
-    { name: "🍦 冰激凌火箭", items: Array(10).fill().map((_,i)=> {
-        const qs = ["《冰激凌火箭》火箭是用什么做的？","冰激凌火箭能飞到？","冰激凌火箭融化后会？","谁乘坐了冰激凌火箭？","冰激凌火箭的味道？","火箭的形状像？","乘坐火箭时的感觉？","冰激凌火箭的颜色？","故事发生在什么季节？","这个故事充满了？"];
-        const opts = [["A. 金属","B. 冰激凌","C. 木头"],["A. 太空","B. 山顶","C. 海边"],["A. 变成雨水","B. 消失","C. 变成糖果"],["A. 小朋友","B. 大人","C. 动物"],["A. 苦涩","B. 香甜","C. 无味"],["A. 圆锥","B. 正方体","C. 球体"],["A. 害怕","B. 刺激","C. 平静"],["A. 单一","B. 多彩","C. 透明"],["A. 春天","B. 夏天","C. 冬天"],["A. 幻想","B. 真实","C. 悲伤"]];
-        const ans = ["B","A","A","A","B","A","B","B","B","A"];
-        return { text: qs[i], options: opts[i], answer: ans[i] };
-    }) },
-    { name: "🧤 两只棉手套", items: Array(10).fill().map((_,i)=> {
+    { name: "🌺 英雄树唱歌", items: [
+        { text: "《英雄树唱歌》英雄树指的是？", options: ["A. 松树", "B. 木棉树", "C. 柳树"], answer: "B" },
+        { text: "英雄树生长在什么地方？", options: ["A. 北方", "B. 南方", "C. 西方"], answer: "B" },
+        { text: "英雄树的花是什么颜色？", options: ["A. 白色", "B. 黄色", "C. 红色"], answer: "C" },
+        { text: "英雄树象征着？", options: ["A. 美丽", "B. 勇敢", "C. 柔软"], answer: "B" },
+        { text: "故事中英雄树会？", options: ["A. 结果", "B. 唱歌", "C. 跳舞"], answer: "B" },
+        { text: "人们为什么喜欢英雄树？", options: ["A. 花好看", "B. 象征精神", "C. 能遮阴"], answer: "B" },
+        { text: "英雄树的树干？", options: ["A. 纤细", "B. 粗壮", "C. 弯曲"], answer: "B" },
+        { text: "《英雄树唱歌》传递的情感是？", options: ["A. 悲伤", "B. 敬佩", "C. 平淡"], answer: "B" },
+        { text: "英雄树适合生长的环境？", options: ["A. 寒冷", "B. 温暖", "C. 干燥"], answer: "B" },
+        { text: "故事中英雄树代表？", options: ["A. 英雄人物", "B. 普通植物", "C. 神秘力量"], answer: "A" }
+    ] },
+    { name: "🧚 仙女的海滩", items: [
+        { text: "《仙女的海滩》海滩上有什么特别的东西？", options: ["A. 贝壳", "B. 仙女", "C. 宝石"], answer: "B" },
+        { text: "仙女的海滩让\"我\"感觉？", options: ["A. 害怕", "B. 神奇", "C. 无聊"], answer: "B" },
+        { text: "在仙女的海滩可以？", options: ["A. 捡贝壳", "B. 见仙女", "C. 堆沙子"], answer: "B" },
+        { text: "《仙女的海滩》是一个什么故事？", options: ["A. 真实", "B. 童话", "C. 历史"], answer: "B" },
+        { text: "仙女的海滩在？", options: ["A. 梦里", "B. 现实", "C. 远方"], answer: "A" },
+        { text: "海滩上的沙子是什么样子？", options: ["A. 粗糙", "B. 细腻", "C. 坚硬"], answer: "B" },
+        { text: "仙女的海滩周围有？", options: ["A. 海浪", "B. 高山", "C. 沙漠"], answer: "A" },
+        { text: "\"我\"在海滩上的心情？", options: ["A. 难过", "B. 愉悦", "C. 紧张"], answer: "B" },
+        { text: "文中没有描写海滩的？", options: ["A. 颜色", "B. 声音", "C. 气味"], answer: "C" },
+        { text: "这个故事体现了孩子的？", options: ["A. 想象力", "B. 记忆力", "C. 观察力"], answer: "A" }
+    ] },
+    { name: "🍦 冰激凌火箭", items: [
+        { text: "《冰激凌火箭》火箭是用什么做的？", options: ["A. 金属", "B. 冰激凌", "C. 木头"], answer: "B" },
+        { text: "冰激凌火箭能飞到？", options: ["A. 太空", "B. 山顶", "C. 海边"], answer: "A" },
+        { text: "冰激凌火箭融化后会？", options: ["A. 变成雨水", "B. 消失", "C. 变成糖果"], answer: "A" },
+        { text: "谁乘坐了冰激凌火箭？", options: ["A. 小朋友", "B. 大人", "C. 动物"], answer: "A" },
+        { text: "冰激凌火箭的味道？", options: ["A. 苦涩", "B. 香甜", "C. 无味"], answer: "B" },
+        { text: "火箭的形状像？", options: ["A. 圆锥", "B. 正方体", "C. 球体"], answer: "A" },
+        { text: "乘坐火箭时的感觉？", options: ["A. 害怕", "B. 刺激", "C. 平静"], answer: "B" },
+        { text: "冰激凌火箭的颜色？", options: ["A. 单一", "B. 多彩", "C. 透明"], answer: "B" },
+        { text: "故事发生在什么季节？", options: ["A. 春天", "B. 夏天", "C. 冬天"], answer: "B" },
+        { text: "这个故事充满了？", options: ["A. 幻想", "B. 真实", "C. 悲伤"], answer: "A" }
+    ] },
+  { name: "🧤 两只棉手套", items: Array(10).fill().map((_,i)=> {
         const qs = ["《两只棉手套》能住几只小松鼠？","小松鼠们住棉手套时？","《两只棉手套》体现了？","棉手套是谁的？","小松鼠们在手套里做什么？","冬天里棉手套能给松鼠？","棉手套的材质是？","故事发生在什么季节？","小松鼠们对棉手套的感受？","这个故事告诉我们要？"];
         const opts = [["A.3只","B.5只","C.7只"],["A. 很挤","B. 很宽敞","C. 很冷"],["A. 分享","B. 自私","C. 浪费"],["A. 松鼠妈妈","B. 小朋友","C. 猎人"],["A. 睡觉","B. 玩耍","C. 找食物"],["A. 温暖","B. 凉爽","C. 食物"],["A. 棉布","B. 塑料","C. 金属"],["A. 春天","B. 夏天","C. 冬天"],["A. 喜欢","B. 讨厌","C. 无所谓"],["A. 乐于助人","B. 独自占有","C. 浪费资源"]];
         const ans = ["B","A","A","B","A","A","A","C","A","A"];
@@ -680,86 +691,286 @@ const remainingStories = [
         const ans = ["B","A","A","A","A","A","A","A","A","A"];
         return { text: qs[i], options: opts[i], answer: ans[i] };
     }) }
+
 ];
 
-// 合并最终 STORIES
-const STORIES = [{ name: "🎨 神笔马良", items: story1Items }, { name: "❄️ 雪天", items: story2Items }, { name: "🐒 小猴的新房子", items: story3Items }, ...remainingStories];
-// 验证总数210
-let totalCheck = STORIES.reduce((s,st)=> s+st.items.length,0);
-console.log("总题库数量(严格匹配文档):", totalCheck); // 应为210
+console.log("总题库数量:", STORIES.reduce((s,st)=> s+st.items.length,0));
 
-// ---- 以下智能学习逻辑完全保留 ----
+// 学习统计系统
 let questionStats = new Map();
-const STORAGE_KEY = "reading_smart_stats_v5";
-function loadStats() { const stored = localStorage.getItem(STORAGE_KEY); if(stored) { try { const parsed = JSON.parse(stored); questionStats = new Map(Object.entries(parsed)); } catch(e){} } updateSummary(); }
-function saveStats() { const obj = Object.fromEntries(questionStats); localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); updateSummary(); }
-function getQuestionStats(gid) { if(!questionStats.has(gid)) questionStats.set(gid, { wrongCount: 0, correctCount: 0, isHidden: false }); return questionStats.get(gid); }
-function updateQuestionStats(gid, isCorrect) { const stats = getQuestionStats(gid); if(isCorrect) { stats.correctCount++; if(stats.correctCount >= 3 && !stats.isHidden) { stats.isHidden = true; showToast(`🎉 太厉害了！本题做对3次，自动隐藏！ 🎉`); } } else { stats.wrongCount++; stats.correctCount = 0; if(stats.isHidden) { stats.isHidden = false; showToast(`📌 本题做错，重新出现练习！`); } } questionStats.set(gid, stats); saveStats(); }
-function isQuestionHidden(gid) { return getQuestionStats(gid).isHidden; }
-function shouldForceInclude(gid) { return getQuestionStats(gid).wrongCount >= 3; }
-function updateSummary() { let totalWrong=0, hiddenCount=0, forceCount=0; for(let [_,stats] of questionStats) { totalWrong+=stats.wrongCount; if(stats.isHidden) hiddenCount++; if(stats.wrongCount>=3) forceCount++; } const panel=document.getElementById('wrongSummaryPanel'); if(panel) panel.innerHTML=` 累计错题: ${totalWrong}次 | 已掌握(隐藏): ${hiddenCount}题<br>⚠️ 高频错题(≥3次): ${forceCount}题 | 做对3次自动隐藏`; }
-function showToast(msg) { const toast=document.createElement('div'); toast.textContent=msg; toast.style.position='fixed'; toast.style.bottom='80px'; toast.style.left='50%'; toast.style.transform='translateX(-50%)'; toast.style.backgroundColor='#4caf50'; toast.style.color='white'; toast.style.padding='12px 24px'; toast.style.borderRadius='40px'; toast.style.zIndex='9999'; toast.style.fontWeight='bold'; toast.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)'; document.body.appendChild(toast); setTimeout(()=>toast.remove(),2500); }
+const STORAGE_KEY = "reading_smart_stats_final";
+
+function loadStats() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if(stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            questionStats = new Map(Object.entries(parsed));
+        } catch(e) {}
+    }
+    updateSummary();
+}
+
+function saveStats() {
+    const obj = Object.fromEntries(questionStats);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    updateSummary();
+}
+
+function getQuestionStats(gid) {
+    if(!questionStats.has(gid)) {
+        questionStats.set(gid, { wrongCount: 0, correctCount: 0, isHidden: false });
+    }
+    return questionStats.get(gid);
+}
+
+function updateQuestionStats(gid, isCorrect) {
+    const stats = getQuestionStats(gid);
+    if(isCorrect) {
+        stats.correctCount++;
+        if(stats.correctCount >= 3 && !stats.isHidden) {
+            stats.isHidden = true;
+            showToast(`🎉 太厉害了！本题做对3次，已从练习列表中移除！ 🎉`);
+            saveStats();
+            return true;
+        }
+    } else {
+        stats.wrongCount++;
+        stats.correctCount = 0;
+        if(stats.isHidden) {
+            stats.isHidden = false;
+            showToast(`📌 本题做错，重新出现练习！`);
+        }
+    }
+    questionStats.set(gid, stats);
+    saveStats();
+    return false;
+}
+
+function isQuestionHidden(gid) {
+    return getQuestionStats(gid).isHidden;
+}
+
+function updateSummary() {
+    let totalWrong = 0, hiddenCount = 0, forceCount = 0;
+    for(let [_, stats] of questionStats) {
+        totalWrong += stats.wrongCount;
+        if(stats.isHidden) hiddenCount++;
+        if(stats.wrongCount >= 3) forceCount++;
+    }
+    const panel = document.getElementById('wrongSummaryPanel');
+    if(panel) panel.innerHTML = `累计错题: ${totalWrong}次 | 已掌握(隐藏): ${hiddenCount}题<br>⚠️ 高频错题: ${forceCount}题 | 做对3次自动移除`;
+}
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.textContent = msg;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '80px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.backgroundColor = '#4caf50';
+    toast.style.color = 'white';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '40px';
+    toast.style.zIndex = '9999';
+    toast.style.fontWeight = 'bold';
+    toast.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
 
 let currentMode = "normal";
 let currentStoryIdx = 0;
 let currentRandomQuestions = [];
 
-function generateSmartRandomSession() {
-    const allItems = [];
-    for(let sIdx=0; sIdx<STORIES.length; sIdx++) {
-        for(let qIdx=0; qIdx<STORIES[sIdx].items.length; qIdx++) {
+function generateSmartRandomSession(targetCount = 30) {
+    const allCandidates = [];
+    for(let sIdx = 0; sIdx < STORIES.length; sIdx++) {
+        for(let qIdx = 0; qIdx < STORIES[sIdx].items.length; qIdx++) {
             const gid = `${sIdx}_${qIdx}`;
             const stats = getQuestionStats(gid);
             if(stats.isHidden) continue;
-            allItems.push({ storyIdx: sIdx, qIdx, qData: STORIES[sIdx].items[qIdx], globalId: gid, wrongCount: stats.wrongCount, forceInclude: stats.wrongCount >= 3 });
+            allCandidates.push({
+                storyIdx: sIdx,
+                qIdx: qIdx,
+                qData: STORIES[sIdx].items[qIdx],
+                globalId: gid,
+                wrongCount: stats.wrongCount,
+                forceInclude: stats.wrongCount >= 3,
+                storyName: STORIES[sIdx].name
+            });
         }
     }
-    const mustInclude = allItems.filter(item=>item.forceInclude);
+    
+    if(allCandidates.length === 0) {
+        currentRandomQuestions = [];
+        return;
+    }
+    
+    let mustInclude = allCandidates.filter(item => item.forceInclude);
     let selected = [...mustInclude];
-    const selectedSet = new Set(selected.map(s=>s.globalId));
-    let remainingSlots = 30 - selected.length;
-    const otherItems = allItems.filter(item=>!item.forceInclude);
-    otherItems.forEach(item=>{ item.weight = item.wrongCount * 2 + Math.random(); });
-    otherItems.sort((a,b)=>b.weight - a.weight);
-    for(let item of otherItems) { if(selected.length>=30) break; if(!selectedSet.has(item.globalId)) { selected.push(item); selectedSet.add(item.globalId); } }
-    if(selected.length<30) { for(let item of otherItems) { if(selected.length>=30) break; if(!selectedSet.has(item.globalId)) selected.push(item); } }
+    let selectedSet = new Set(selected.map(s => s.globalId));
+    
+    let remainingSlots = Math.min(targetCount, allCandidates.length) - selected.length;
+    if(remainingSlots > 0) {
+        let otherItems = allCandidates.filter(item => !item.forceInclude && !selectedSet.has(item.globalId));
+        otherItems.forEach(item => { item.weight = item.wrongCount * 3 + Math.random(); });
+        otherItems.sort((a, b) => b.weight - a.weight);
+        for(let item of otherItems) {
+            if(selected.length >= targetCount) break;
+            if(!selectedSet.has(item.globalId)) {
+                selected.push(item);
+                selectedSet.add(item.globalId);
+            }
+        }
+    }
+    
+    for(let i = selected.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [selected[i], selected[j]] = [selected[j], selected[i]];
+    }
     currentRandomQuestions = selected;
+    
     const infoDiv = document.getElementById('randomInfo');
-    if(infoDiv) infoDiv.innerHTML = `🎯 本次30题 | 必出现(错≥3): ${mustInclude.length}题 | 错题强化模式`;
+    if(infoDiv) infoDiv.innerHTML = `🎯 当前${currentRandomQuestions.length}题 | 必出现(错≥3): ${mustInclude.length}题 | 做对3次自动移除`;
+}
+
+function removeFromRandomList(gid) {
+    const index = currentRandomQuestions.findIndex(item => item.globalId === gid);
+    if(index !== -1) {
+        currentRandomQuestions.splice(index, 1);
+        return true;
+    }
+    return false;
+}
+
+function renderRandomSession() {
+    if(!currentRandomQuestions.length) {
+        generateSmartRandomSession(30);
+    }
+    const container = document.getElementById('dynamic-story-area');
+    if(currentRandomQuestions.length === 0) {
+        container.innerHTML = `<div class="active-story-container"><div class="story-section"><div class="story-title">🎉 恭喜！ 🎉</div><div style="text-align:center; padding:40px; font-size:1.5rem;">✨ 你已经掌握了所有题目！ ✨<br>点击"显示隐藏题目"可继续练习</div></div></div>`;
+        document.getElementById('storyProgress').innerHTML = `🎉 完美！所有题目已掌握！ 🎉`;
+        return;
+    }
+    
+    let html = `<div class="active-story-container"><div class="story-section"><div class="story-title">🎲 随机动态调整 <span class="random-badge">剩余: ${currentRandomQuestions.length}题</span></div>`;
+    for(let i = 0; i < currentRandomQuestions.length; i++) {
+        const item = currentRandomQuestions[i];
+        const q = item.qData;
+        const gid = item.globalId;
+        const stats = getQuestionStats(gid);
+        html += `<div class="question-card" id="card-${gid}">
+            <div class="question-header">
+                <div class="question-text">
+                    <span class="q-num">${i+1}</span> 
+                    ${q.text}
+                    <span class="story-tag">📖 ${item.storyName}</span>
+                </div>
+                <div class="stats-area">
+                    <div class="wrong-counter">❌ 错题: ${stats.wrongCount}</div>
+                    <div class="correct-counter">✅ 做对: ${stats.correctCount}/3</div>
+                    ${stats.wrongCount>=3?'<div class="master-badge">⚠️ 必须掌握</div>':''}
+                </div>
+            </div>
+            <div class="options-area" id="opts-${gid}">
+                ${q.options.map(opt => `<button class="option-btn" data-gid="${gid}" data-value="${opt.charAt(0)}">${opt}</button>`).join('')}
+            </div>
+            <div class="feedback-msg" id="fb-${gid}"></div>
+            <div class="answer-zone">
+                <div class="answer-block" data-gid="${gid}" data-answer="${q.answer}" data-visible="false">📖 点击显示答案</div>
+            </div>
+        </div>`;
+    }
+    html += `</div></div>`;
+    container.innerHTML = html;
+    attachEvents();
+    document.getElementById('storyProgress').innerHTML = `🎲 智能随机 | 剩余${currentRandomQuestions.length}题 | 做对3次自动移除 | 错≥3必出现`;
 }
 
 function renderStoryByIndex(storyIdx) {
     const story = STORIES[storyIdx];
     const container = document.getElementById('dynamic-story-area');
-    let html = `<div class="active-story-container"><div class="story-section"><div class="story-title">${story.name}  (${story.items.length}题 · 错题优先)</div>`;
-    for(let qIdx=0; qIdx<story.items.length; qIdx++) {
+    let html = `<div class="active-story-container"><div class="story-section"><div class="story-title">${story.name}  (${story.items.length}题)</div>`;
+    let visibleCount = 0;
+    for(let qIdx = 0; qIdx < story.items.length; qIdx++) {
         const q = story.items[qIdx];
         const gid = `${storyIdx}_${qIdx}`;
         if(isQuestionHidden(gid)) continue;
+        visibleCount++;
         const stats = getQuestionStats(gid);
-        html += `<div class="question-card" id="card-${gid}"><div class="question-header"><div class="question-text"><span class="q-num">${qIdx+1}</span> ${q.text}</div><div class="stats-area"><div class="wrong-counter">❌ 错题: ${stats.wrongCount}</div><div class="correct-counter">✅ 做对: ${stats.correctCount}/3</div>${stats.wrongCount>=3?'<div class="master-badge">⚠️ 高频错题</div>':''}</div></div><div class="options-area" id="opts-${gid}">${q.options.map(opt=>`<button class="option-btn" data-gid="${gid}" data-value="${opt.charAt(0)}">${opt}</button>`).join('')}</div><div class="feedback-msg" id="fb-${gid}"></div><div class="answer-zone"><div class="answer-block" data-gid="${gid}" data-answer="${q.answer}" data-visible="false">📖 点击显示答案</div></div></div>`;
+        html += `<div class="question-card" id="card-${gid}">
+            <div class="question-header">
+                <div class="question-text">
+                    <span class="q-num">${visibleCount}</span> 
+                    ${q.text}
+                </div>
+                <div class="stats-area">
+                    <div class="wrong-counter">❌ 错题: ${stats.wrongCount}</div>
+                    <div class="correct-counter">✅ 做对: ${stats.correctCount}/3</div>
+                    ${stats.wrongCount>=3?'<div class="master-badge">⚠️ 高频错题</div>':''}
+                </div>
+            </div>
+            <div class="options-area" id="opts-${gid}">
+                ${q.options.map(opt => `<button class="option-btn" data-gid="${gid}" data-value="${opt.charAt(0)}">${opt}</button>`).join('')}
+            </div>
+            <div class="feedback-msg" id="fb-${gid}"></div>
+            <div class="answer-zone">
+                <div class="answer-block" data-gid="${gid}" data-answer="${q.answer}" data-visible="false">📖 点击显示答案</div>
+            </div>
+        </div>`;
     }
     html += `</div></div>`;
+    if(visibleCount === 0) {
+        html = `<div class="active-story-container"><div class="story-section"><div class="story-title">${story.name}</div><div style="text-align:center; padding:40px;">🎉 恭喜！这个故事的所有题目你都掌握了！ 🎉</div></div></div>`;
+    }
     container.innerHTML = html;
     attachEvents();
-    document.getElementById('storyProgress').innerHTML = `📖 当前：${story.name} ｜ 已掌握题目自动隐藏`;
+    document.getElementById('storyProgress').innerHTML = `📖 当前：${story.name} ｜ 已掌握${story.items.length - visibleCount}题 | 剩余${visibleCount}题`;
 }
 
-function renderRandomSession() {
-    if(!currentRandomQuestions.length) generateSmartRandomSession();
-    const container = document.getElementById('dynamic-story-area');
-    let html = `<div class="active-story-container"><div class="story-section"><div class="story-title">🎲 智能随机·错题强化 <span class="random-badge">错≥3次必出现</span></div>`;
-    for(let i=0; i<currentRandomQuestions.length; i++) {
-        const item = currentRandomQuestions[i];
-        const q = item.qData;
-        const gid = item.globalId;
-        const stats = getQuestionStats(gid);
-        html += `<div class="question-card" id="card-${gid}"><div class="question-header"><div class="question-text"><span class="q-num">${i+1}</span> ${q.text}</div><div class="stats-area"><div class="wrong-counter">❌ 错题: ${stats.wrongCount}</div><div class="correct-counter">✅ 做对: ${stats.correctCount}/3</div>${stats.wrongCount>=3?'<div class="master-badge">⚠️ 必须掌握</div>':''}</div></div><div class="options-area" id="opts-${gid}">${q.options.map(opt=>`<button class="option-btn" data-gid="${gid}" data-value="${opt.charAt(0)}">${opt}</button>`).join('')}</div><div class="feedback-msg" id="fb-${gid}"></div><div class="answer-zone"><div class="answer-block" data-gid="${gid}" data-answer="${q.answer}" data-visible="false">📖 点击显示答案</div></div></div>`;
+function attachEvents() {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.removeEventListener('click', optionClickHandler);
+        btn.addEventListener('click', optionClickHandler);
+    });
+    document.querySelectorAll('.answer-block').forEach(block => {
+        block.removeEventListener('click', answerClickHandler);
+        block.addEventListener('click', answerClickHandler);
+    });
+}
+
+function showFeedback(gid, isCorrect, correctAnswer) {
+    const feedbackDiv = document.getElementById(`fb-${gid}`);
+    if(!feedbackDiv) return;
+    
+    if(isCorrect) {
+        feedbackDiv.innerHTML = '🎉 完全正确！ 太棒啦！ 👏🎊 继续加油！';
+        feedbackDiv.className = 'feedback-msg feedback-correct';
+    } else {
+        feedbackDiv.innerHTML = `再试试～ 正确答案是 ${correctAnswer}. 加油哟！ 💪`;
+        feedbackDiv.className = 'feedback-msg feedback-wrong';
     }
-    html += `</div></div>`;
-    container.innerHTML = html;
-    attachEvents();
-    document.getElementById('storyProgress').innerHTML = `🎲 智能随机 | ${currentRandomQuestions.length}题 | 错≥3必出现 | 做对3次自动隐藏`;
+}
+
+function highlightSelectedOption(gid, selectedValue, isCorrect, correctAnswer) {
+    const parentOpts = document.getElementById(`opts-${gid}`);
+    if(!parentOpts) return;
+    
+    parentOpts.querySelectorAll('.option-btn').forEach(opt => {
+        opt.classList.remove('option-correct-feedback', 'option-wrong-feedback');
+        const optValue = opt.getAttribute('data-value');
+        if(optValue === selectedValue && isCorrect) {
+            opt.classList.add('option-correct-feedback');
+        } else if(optValue === selectedValue && !isCorrect) {
+            opt.classList.add('option-wrong-feedback');
+        }
+        if(optValue === correctAnswer && !isCorrect) {
+            opt.classList.add('option-correct-feedback');
+        }
+    });
 }
 
 function optionClickHandler(e) {
@@ -768,47 +979,178 @@ function optionClickHandler(e) {
     const selectedVal = btn.getAttribute('data-value');
     const answerBlock = document.querySelector(`.answer-block[data-gid="${gid}"]`);
     const correctAnswer = answerBlock ? answerBlock.getAttribute('data-answer') : '';
-    const feedbackDiv = document.getElementById(`fb-${gid}`);
-    const parentOpts = document.getElementById(`opts-${gid}`);
-    if(parentOpts) parentOpts.querySelectorAll('.option-btn').forEach(opt=>opt.classList.remove('option-correct-feedback','option-wrong-feedback'));
-    if(selectedVal === correctAnswer) {
-        btn.classList.add('option-correct-feedback');
-        feedbackDiv.innerHTML = '🎉 完全正确！ 太棒啦！ 👏🎊 继续加油！';
-        feedbackDiv.className = 'feedback-msg feedback-correct';
-        playCheerVoice(); // 童音: 耶，闪闪你真棒！
-        updateQuestionStats(gid, true);
-        const stats = getQuestionStats(gid);
-        const wrongSpan = document.querySelector(`#card-${gid} .wrong-counter`);
-        const correctSpan = document.querySelector(`#card-${gid} .correct-counter`);
-        if(wrongSpan) wrongSpan.innerHTML = `❌ 错题: ${stats.wrongCount}`;
-        if(correctSpan) correctSpan.innerHTML = `✅ 做对: ${stats.correctCount}/3`;
-        if(stats.isHidden && currentMode === "random") { generateSmartRandomSession(); renderRandomSession(); }
-        else if(stats.isHidden && currentMode === "normal") renderStoryByIndex(currentStoryIdx);
+    
+    const isCorrect = (selectedVal === correctAnswer);
+    showFeedback(gid, isCorrect, correctAnswer);
+    highlightSelectedOption(gid, selectedVal, isCorrect, correctAnswer);
+    
+    if(isCorrect) {
+        playCheerVoice();
+        const justHidden = updateQuestionStats(gid, true);
+        
+        if(currentMode === "random") {
+            if(justHidden) {
+                removeFromRandomList(gid);
+            }
+            setTimeout(() => {
+                renderRandomSession();
+            }, 800);
+        } else if(currentMode === "normal") {
+            setTimeout(() => {
+                renderStoryByIndex(currentStoryIdx);
+            }, 500);
+        }
     } else {
-        btn.classList.add('option-wrong-feedback');
-        feedbackDiv.innerHTML = `再试试～ 正确答案是 ${correctAnswer}. 加油哟！ 💪`;
-        feedbackDiv.className = 'feedback-msg feedback-wrong';
         updateQuestionStats(gid, false);
-        const stats = getQuestionStats(gid);
-        const wrongSpan = document.querySelector(`#card-${gid} .wrong-counter`);
-        const correctSpan = document.querySelector(`#card-${gid} .correct-counter`);
-        if(wrongSpan) wrongSpan.innerHTML = `❌ 错题: ${stats.wrongCount}`;
-        if(correctSpan) correctSpan.innerHTML = `✅ 做对: ${stats.correctCount}/3`;
-        if(currentMode === "random" && stats.wrongCount >= 3) { generateSmartRandomSession(); renderRandomSession(); }
-        else if(currentMode === "normal" && stats.wrongCount >= 3) renderStoryByIndex(currentStoryIdx);
+        
+        if(currentMode === "random") {
+            setTimeout(() => {
+                renderRandomSession();
+            }, 800);
+        } else if(currentMode === "normal") {
+            setTimeout(() => {
+                renderStoryByIndex(currentStoryIdx);
+            }, 500);
+        }
     }
 }
-function answerClickHandler(e) { const block=e.currentTarget; const gid=block.getAttribute('data-gid'); const correctLetter=block.getAttribute('data-answer'); const isVisible=block.getAttribute('data-visible')==='true'; if(!isVisible) { let fullAnswer=correctLetter; const parentCard=document.getElementById(`card-${gid}`); if(parentCard){ for(let opt of parentCard.querySelectorAll('.option-btn')){ if(opt.getAttribute('data-value')===correctLetter){ fullAnswer=opt.innerText; break; } } } block.innerHTML=`✅ 答案：${fullAnswer} ✅`; block.classList.add('answer-show-style'); block.setAttribute('data-visible','true'); } else { block.innerHTML='📖 点击显示答案'; block.classList.remove('answer-show-style'); block.setAttribute('data-visible','false'); } }
-function attachEvents() { document.querySelectorAll('.option-btn').forEach(btn=>{ btn.removeEventListener('click',optionClickHandler); btn.addEventListener('click',optionClickHandler); }); document.querySelectorAll('.answer-block').forEach(block=>{ block.removeEventListener('click',answerClickHandler); block.addEventListener('click',answerClickHandler); }); }
-function renderCurrent() { if(currentMode==="normal") renderStoryByIndex(currentStoryIdx); else renderRandomSession(); updateTocActive(); }
-function updateTocActive() { document.querySelectorAll('.toc-item').forEach((item,i)=>{ if(currentMode==='normal' && i===currentStoryIdx) item.classList.add('active'); else item.classList.remove('active'); }); }
-function buildToc() { const toc=document.getElementById('tocListContainer'); toc.innerHTML=''; STORIES.forEach((story,idx)=>{ const div=document.createElement('div'); div.className='toc-item'; if(currentMode==='normal' && idx===currentStoryIdx) div.classList.add('active'); const storyIcon=Array.from(story.name)[0]||'📚'; div.innerHTML=`<div class="toc-icon">${storyIcon}</div><div>${story.name}</div><span class="story-count-badge">${story.items.length}</span>`; div.addEventListener('click',()=>{ if(currentMode==='normal'){ currentStoryIdx=idx; renderCurrent(); } else { currentMode='normal'; currentStoryIdx=idx; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); renderCurrent(); } updateTocActive(); }); toc.appendChild(div); }); }
-document.getElementById('modeNormalBtn').addEventListener('click',()=>{ currentMode='normal'; document.getElementById('modeNormalBtn').classList.add('active'); document.getElementById('modeRandomBtn').classList.remove('active'); renderCurrent(); });
-document.getElementById('modeRandomBtn').addEventListener('click',()=>{ currentMode='random'; generateSmartRandomSession(); document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); renderCurrent(); });
-document.getElementById('newRandomBtn').addEventListener('click',()=>{ if(currentMode!=='random'){ currentMode='random'; document.getElementById('modeRandomBtn').classList.add('active'); document.getElementById('modeNormalBtn').classList.remove('active'); } generateSmartRandomSession(); renderCurrent(); });
-document.getElementById('unhideAllBtn').addEventListener('click',()=>{ for(let [gid,stats] of questionStats){ if(stats.isHidden){ stats.isHidden=false; questionStats.set(gid,stats); } } saveStats(); renderCurrent(); showToast('🔓 所有隐藏题目已重新显示！'); });
-document.getElementById('resetCurrentBtn').addEventListener('click',()=>{ document.querySelectorAll('.option-btn').forEach(btn=>btn.classList.remove('option-correct-feedback','option-wrong-feedback')); document.querySelectorAll('.feedback-msg').forEach(fb=>{ fb.innerHTML=''; fb.className='feedback-msg'; }); document.querySelectorAll('.answer-block').forEach(block=>{ block.innerHTML='📖 点击显示答案'; block.classList.remove('answer-show-style'); block.setAttribute('data-visible','false'); }); });
-document.getElementById('clearRecordBtn').addEventListener('click',()=>{ if(confirm('清空所有学习记录？这将重置所有错题和正确次数')){ questionStats.clear(); saveStats(); renderCurrent(); } });
+
+function answerClickHandler(e) {
+    const block = e.currentTarget;
+    const gid = block.getAttribute('data-gid');
+    const correctLetter = block.getAttribute('data-answer');
+    const isVisible = block.getAttribute('data-visible') === 'true';
+    if(!isVisible) {
+        let fullAnswer = correctLetter;
+        const parentCard = document.getElementById(`card-${gid}`);
+        if(parentCard) {
+            for(let opt of parentCard.querySelectorAll('.option-btn')) {
+                if(opt.getAttribute('data-value') === correctLetter) {
+                    fullAnswer = opt.innerText;
+                    break;
+                }
+            }
+        }
+        block.innerHTML = `✅ 答案：${fullAnswer} ✅`;
+        block.classList.add('answer-show-style');
+        block.setAttribute('data-visible', 'true');
+    } else {
+        block.innerHTML = '📖 点击显示答案';
+        block.classList.remove('answer-show-style');
+        block.setAttribute('data-visible', 'false');
+    }
+}
+
+function renderCurrent() {
+    if(currentMode === "normal") {
+        renderStoryByIndex(currentStoryIdx);
+    } else {
+        renderRandomSession();
+    }
+    updateTocActive();
+}
+
+function updateTocActive() {
+    document.querySelectorAll('.toc-item').forEach((item, idx) => {
+        if(currentMode === 'normal' && idx === currentStoryIdx) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function buildToc() {
+    const toc = document.getElementById('tocListContainer');
+    toc.innerHTML = '';
+    STORIES.forEach((story, idx) => {
+        const div = document.createElement('div');
+        div.className = 'toc-item';
+        if(currentMode === 'normal' && idx === currentStoryIdx) div.classList.add('active');
+         div.innerHTML = `<div>${story.name}</div><span class="story-count-badge">${story.items.length}</span>`;
+        div.addEventListener('click', () => {
+            if(currentMode === 'normal') {
+                currentStoryIdx = idx;
+                renderCurrent();
+            } else {
+                currentMode = 'normal';
+                currentStoryIdx = idx;
+                document.getElementById('modeNormalBtn').classList.add('active');
+                document.getElementById('modeRandomBtn').classList.remove('active');
+                renderCurrent();
+            }
+            updateTocActive();
+        });
+        toc.appendChild(div);
+    });
+}
+
+document.getElementById('modeNormalBtn').addEventListener('click', () => {
+    currentMode = 'normal';
+    document.getElementById('modeNormalBtn').classList.add('active');
+    document.getElementById('modeRandomBtn').classList.remove('active');
+    renderCurrent();
+});
+
+document.getElementById('modeRandomBtn').addEventListener('click', () => {
+    currentMode = 'random';
+    generateSmartRandomSession(30);
+    document.getElementById('modeRandomBtn').classList.add('active');
+    document.getElementById('modeNormalBtn').classList.remove('active');
+    renderCurrent();
+});
+
+document.getElementById('newRandomBtn').addEventListener('click', () => {
+    if(currentMode !== 'random') {
+        currentMode = 'random';
+        document.getElementById('modeRandomBtn').classList.add('active');
+        document.getElementById('modeNormalBtn').classList.remove('active');
+    }
+    generateSmartRandomSession(30);
+    renderCurrent();
+});
+
+document.getElementById('unhideAllBtn').addEventListener('click', () => {
+    for(let [gid, stats] of questionStats) {
+        if(stats.isHidden) {
+            stats.isHidden = false;
+            questionStats.set(gid, stats);
+        }
+    }
+    saveStats();
+    if(currentMode === "random") {
+        generateSmartRandomSession(30);
+    }
+    renderCurrent();
+    showToast('🔓 所有隐藏题目已重新显示！');
+});
+
+document.getElementById('resetCurrentBtn').addEventListener('click', () => {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('option-correct-feedback', 'option-wrong-feedback');
+    });
+    document.querySelectorAll('.feedback-msg').forEach(fb => {
+        fb.innerHTML = '';
+        fb.className = 'feedback-msg';
+    });
+    document.querySelectorAll('.answer-block').forEach(block => {
+        block.innerHTML = '📖 点击显示答案';
+        block.classList.remove('answer-show-style');
+        block.setAttribute('data-visible', 'false');
+    });
+});
+
+document.getElementById('clearRecordBtn').addEventListener('click', () => {
+    if(confirm('清空所有学习记录？这将重置所有错题和正确次数')) {
+        questionStats.clear();
+        saveStats();
+        if(currentMode === "random") {
+            generateSmartRandomSession(30);
+        }
+        renderCurrent();
+    }
+});
+
 loadStats();
 buildToc();
 renderStoryByIndex(0);
